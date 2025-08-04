@@ -1,10 +1,10 @@
-import ampq from "amqplib";
+import amqp from "amqplib";
 
-let channel: ampq.Channel;
+let channel: amqp.Channel;
 
 export const connectRabbitMq = async() => {
     try {
-        const connection = await ampq.connect({
+        const connection = await amqp.connect({
             protocol: "amqp",
             hostname: process.env.RABBITMQ_HOST,
             port: 5672,
@@ -14,8 +14,21 @@ export const connectRabbitMq = async() => {
 
         channel = await connection.createChannel();
 
-        console.log("Connected to Rabbit Mq!!!")
+        console.log("Connected to Rabbit Mq !!!")
     } catch (error) {
         console.log("Failed to connect to Rabbit Mq", error);
     }
+};
+
+export const publishToQueue = async(queueName: string, message: any) => {
+    if(!channel){
+        console.log("Rabbit Mq channel is not initialised");
+        return;
+    }
+
+    // durable -> retry after err
+    await channel.assertQueue(queueName, {durable: true});
+
+    channel.sendToQueue(queueName, Buffer.from(JSON.stringify(message)),{persistent: true});
 }
+
