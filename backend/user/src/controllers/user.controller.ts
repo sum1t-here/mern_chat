@@ -2,6 +2,7 @@ import TryCatch from "../configs/catch.config.js";
 import { generateJWTToken } from "../configs/genToken.config.js";
 import { publishToQueue } from "../configs/rabbitmq.config.js";
 import { redisClient } from "../index.js";
+import { AuthenticatedRequest } from "../middleware/isAuth.middleware.js";
 import { User } from "../models/user.model.js";
 
 export const loginUser = TryCatch(async(req, res) => {
@@ -95,4 +96,44 @@ export const verifyUser = TryCatch(async (req, res) => {
         user,
         token
     });
+});
+
+export const userProfile = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const user = req.user;
+    res.json(user);
+});
+
+export const updateName = TryCatch(async (req: AuthenticatedRequest, res) => {
+    const user = await User.findById(req.user?._id);
+
+    if(!user) {
+        res.status(401).json({
+            message: "Please Login",
+        })
+    };
+
+    user!.name = req.body.name;
+
+    await user?.save();
+
+    // update the token with new user name
+    const token = generateJWTToken(user);
+
+    res.json({
+        message: "User updated",
+        user,
+        token,
+    });
+});
+
+export const getAllUsers = TryCatch(async(req: AuthenticatedRequest, res) => {
+    const users = await User.find();
+
+    res.json(users);
+});
+
+export const getUser = TryCatch(async(req, res) => {
+    const user = await User.findById(req.params.id);
+
+    res.json(user);
 })

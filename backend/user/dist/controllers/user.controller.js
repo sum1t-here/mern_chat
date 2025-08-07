@@ -75,3 +75,33 @@ export const verifyUser = TryCatch(async (req, res) => {
         token
     });
 });
+export const userProfile = TryCatch(async (req, res) => {
+    const user = req.user;
+    res.json(user);
+});
+export const updateName = TryCatch(async (req, res) => {
+    const user = await User.findById(req.user?._id);
+    if (!user) {
+        res.status(401).json({
+            message: "Please Login",
+        });
+    }
+    ;
+    user.name = req.body.name;
+    await user?.save();
+    // update the token with new user name
+    const token = generateJWTToken(user);
+    res.json({
+        message: "User updated",
+        user,
+        token,
+    });
+});
+export const getAllUsers = TryCatch(async (req, res) => {
+    const users = await User.find();
+    res.json(users);
+});
+export const getUser = TryCatch(async (req, res) => {
+    const user = await User.findById(req.params.id);
+    res.json(user);
+});
